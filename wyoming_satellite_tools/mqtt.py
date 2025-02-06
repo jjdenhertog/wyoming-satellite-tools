@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import logging
+import socket
 import time
 from functools import partial
 
@@ -89,8 +90,22 @@ async def _main() -> None:
     _LOGGER.debug(args)
 
     # Configure MQTT client
-    mqtt_client = mqtt.Client()
-    mqtt_client.connect(args.broker, args.port, 60)
+    mqtt_client = mqtt.Client(protocol=mqtt.MQTTv5)  # Use MQTT v5 protocol
+
+    try:
+        mqtt_client.connect(args.broker, args.port, 60)
+    except (ConnectionRefusedError, socket.gaierror) as err:
+        _LOGGER.error(
+            "Failed to connect to MQTT broker at %s:%d - %s",
+            args.broker,
+            args.port,
+            str(err),
+        )
+        return
+    except Exception as err:
+        _LOGGER.error("Unexpected error connecting to MQTT broker: %s", str(err))
+        return
+
     mqtt_client.loop_start()
 
     # Start server

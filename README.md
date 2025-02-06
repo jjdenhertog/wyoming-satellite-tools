@@ -17,7 +17,7 @@ Control ReSpeaker Mic Array v2.0 LEDs using Wyoming events via MQTT. This packag
 This service listens for Wyoming events and publishes them as MQTT messages:
 
 ```bash
-wyoming-satellite-tools-mqtt \
+script/run_mqtt \
     --uri 'tcp://127.0.0.1:10800' \
     --broker 'mqtt://mqtt:mqtt@192.168.50.174:1883)' \
     --satellite-id 'living_room'
