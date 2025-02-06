@@ -89,11 +89,32 @@ async def _main() -> None:
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     _LOGGER.debug(args)
 
+    # Validate broker address
+    if args.broker.strip() == "":
+        _LOGGER.error("MQTT broker address cannot be empty")
+        return
+
+    _LOGGER.info(
+        "Attempting to connect to MQTT broker at %s:%d", args.broker, args.port
+    )
+
     # Configure MQTT client
     mqtt_client = mqtt.Client(protocol=mqtt.MQTTv5)  # Use MQTT v5 protocol
 
     try:
+        # Try to resolve hostname first
+        try:
+            socket.gethostbyname(args.broker)
+        except socket.gaierror as err:
+            _LOGGER.error(
+                "Could not resolve MQTT broker hostname '%s'. Check that the hostname is correct and DNS is working. Error: %s",
+                args.broker,
+                str(err),
+            )
+            return
+
         mqtt_client.connect(args.broker, args.port, 60)
+        _LOGGER.info("Successfully connected to MQTT broker")
     except (ConnectionRefusedError, socket.gaierror) as err:
         _LOGGER.error(
             "Failed to connect to MQTT broker at %s:%d - %s",
