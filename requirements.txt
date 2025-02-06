@@ -1,3 +1,0 @@
-paho-mqtt==2.1.0
-pixel-ring==0.1.0; sys_platform == 'linux'
-pyusb==1.2.1
