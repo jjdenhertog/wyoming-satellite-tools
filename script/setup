@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import venv
+from pathlib import Path
+
+# Directories
+_DIR = Path(__file__).parent
+_PROGRAM_DIR = _DIR.parent
+_VENV_DIR = _PROGRAM_DIR / ".venv"
+
+# Argument parser
+parser = argparse.ArgumentParser()
+parser.add_argument("--dev", action="store_true", help="Install dev requirements")
+args = parser.parse_args()
+
+# Create virtual environment
+builder = venv.EnvBuilder(with_pip=True)
+context = builder.ensure_directories(_VENV_DIR)
+builder.create(_VENV_DIR)
+
+# Upgrade pip, setuptools, and wheel
+pip = [context.env_exe, "-m", "pip"]
+subprocess.check_call(pip + ["install", "--upgrade", "pip"])
+subprocess.check_call(pip + ["install", "--upgrade", "setuptools", "wheel"])
+
+# Install main requirements
+subprocess.check_call(
+    pip
+    + [
+        "install",
+        "--extra-index-url",
+        "https://www.piwheels.org/simple",
+        "-r",
+        str(_PROGRAM_DIR / "requirements.txt"),
+    ]
+)
+
+# Install dev requirements if --dev is specified
+if args.dev:
+    dev_requirements = _PROGRAM_DIR / "requirements_dev.txt"
+    if dev_requirements.exists():
+        subprocess.check_call(pip + ["install", "-r", str(dev_requirements)])
+    else:
+        print("No requirements_dev.txt found. Skipping development requirements.")
+
+# Notify the user of successful setup
+print(f"Setup complete. Virtual environment created at {_VENV_DIR}.")
