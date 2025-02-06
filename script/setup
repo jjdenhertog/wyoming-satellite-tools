@@ -17,7 +17,6 @@ pip = [context.env_exe, "-m", "pip"]
 subprocess.check_call(pip + ["install", "--upgrade", "pip"])
 subprocess.check_call(pip + ["install", "--upgrade", "setuptools", "wheel"])
 
-
 # Install the package in editable mode
 subprocess.check_call(
     pip
