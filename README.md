@@ -18,9 +18,9 @@ This service listens for Wyoming events and publishes them as MQTT messages:
 
 ```bash
 wyoming-satellite-tools-mqtt \
-    --uri unix:///path/to/socket \
-    --broker localhost \
-    --satellite-id living_room
+    --uri 'tcp://127.0.0.1:10800' \
+    --broker 'mqtt://mqtt:mqtt@192.168.50.174:1883)' \
+    --satellite-id 'living_room'
 ```
 
 ### 2. Start the LED Controller
