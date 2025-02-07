@@ -61,7 +61,7 @@ def on_message(client, userdata, msg):
             # STT completed
             logging.debug("STT completed")
         elif event == "audio-start":
-            pixel_ring.wakeup()
+            pixel_ring.off()
         elif event == "audio-stop":
             pixel_ring.off()
         elif event == "played":
