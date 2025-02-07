@@ -10,27 +10,14 @@ from pixel_ring import pixel_ring
 
 _LOGGER = logging.getLogger()
 
-MQTT_TOPIC_PREFIX = "wyoming-satellite"
-MQTT_TOPICS = {
-    "detection": f"{MQTT_TOPIC_PREFIX}/detection",
-    "voice_started": f"{MQTT_TOPIC_PREFIX}/voice_started",
-    "voice_stopped": f"{MQTT_TOPIC_PREFIX}/voice_stopped",
-    "streaming_started": f"{MQTT_TOPIC_PREFIX}/streaming_started",
-    "streaming_stopped": f"{MQTT_TOPIC_PREFIX}/streaming_stopped",
-    "connected": f"{MQTT_TOPIC_PREFIX}/connected",
-    "disconnected": f"{MQTT_TOPIC_PREFIX}/disconnected",
-    "played": f"{MQTT_TOPIC_PREFIX}/played",
-}
-
 
 def on_connect(client, userdata, flags, rc):
     """MQTT on_connect callback."""
     if rc == 0:
         _LOGGER.info("Connected to MQTT broker")
-        # Subscribe to all topics
-        for topic in MQTT_TOPICS.values():
-            client.subscribe(topic)
-            _LOGGER.debug("Subscribed to topic: %s", topic)
+
+        client.subscribe("/wyoming-satellite/event")
+        _LOGGER.debug("Subscribed to topic: /wyoming-satellite/event", topic)
     else:
         _LOGGER.error("Failed to connect to MQTT broker with code: %d", rc)
 
@@ -39,29 +26,29 @@ def on_message(client, userdata, msg):
     """MQTT on_message callback."""
     try:
         payload = json.loads(msg.payload.decode())
-        satellite_id = payload.get("satelliteId")
+        name = payload.get("name")
+        data = payload.get("data")
 
-        # Only process messages for our satellite ID
-        if satellite_id != userdata["satellite_id"]:
+        if name != userdata["name"]:
             return
 
         _LOGGER.debug("Received message: %s -> %s", msg.topic, payload)
 
-        if msg.topic == MQTT_TOPICS["detection"]:
-            pixel_ring.wakeup()
-        elif msg.topic == MQTT_TOPICS["voice_started"]:
-            pixel_ring.speak()
-        elif msg.topic == MQTT_TOPICS["voice_stopped"]:
-            pixel_ring.spin()
-        elif msg.topic == MQTT_TOPICS["streaming_stopped"]:
-            pixel_ring.off()
-        elif msg.topic == MQTT_TOPICS["connected"]:
-            pixel_ring.think()
-            asyncio.get_event_loop().create_task(turn_off_after_delay(2))
-        elif msg.topic == MQTT_TOPICS["disconnected"]:
-            pixel_ring.off()
-        elif msg.topic == MQTT_TOPICS["played"]:
-            pixel_ring.off()
+        # if msg.topic == MQTT_TOPICS["detection"]:
+        #     pixel_ring.wakeup()
+        # elif msg.topic == MQTT_TOPICS["voice_started"]:
+        #     pixel_ring.speak()
+        # elif msg.topic == MQTT_TOPICS["voice_stopped"]:
+        #     pixel_ring.spin()
+        # elif msg.topic == MQTT_TOPICS["streaming_stopped"]:
+        #     pixel_ring.off()
+        # elif msg.topic == MQTT_TOPICS["connected"]:
+        #     pixel_ring.think()
+        #     asyncio.get_event_loop().create_task(turn_off_after_delay(2))
+        # elif msg.topic == MQTT_TOPICS["disconnected"]:
+        #     pixel_ring.off()
+        # elif msg.topic == MQTT_TOPICS["played"]:
+        #     pixel_ring.off()
 
     except json.JSONDecodeError:
         _LOGGER.error("Failed to decode JSON payload")
@@ -78,11 +65,12 @@ async def turn_off_after_delay(delay):
 async def _main() -> None:
     """Internal async main entry point."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--broker", required=True, help="MQTT broker address")
-    parser.add_argument("--port", type=int, default=1883, help="MQTT broker port")
-    parser.add_argument(
-        "--satellite-id", default="living_room", help="Satellite ID to respond to"
-    )
+
+    parser.add_argument("--mqtt_host", required=True, help="MQTT broker address")
+    parser.add_argument("--mqtt_port", type=int, default=1883, help="MQTT broker port")
+    parser.add_argument("--mqtt_username", default="", help="MQTT username")
+    parser.add_argument("--mqtt_password", default="", help="MQTT password")
+    parser.add_argument("--name", required=True, help="Satellite Name")
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     args = parser.parse_args()
 
@@ -98,13 +86,19 @@ async def _main() -> None:
     pixel_ring.off()
 
     # Configure MQTT client
-    client = mqtt.Client(userdata={"satellite_id": args.satellite_id})
-    client.on_connect = on_connect
-    client.on_message = on_message
+    mqtt_broker = args.mqtt_host
+    mqtt_port = args.mqtt_port
+    mqtt_username = args.mqtt_username
+    mqtt_password = args.mqtt_password
+
+    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    mqtt_client.username_pw_set(mqtt_username, mqtt_password)
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_message = on_message
 
     try:
-        client.connect(args.broker, args.port, 60)
-        client.loop_start()
+        mqtt_client.connect(mqtt_broker, mqtt_port, 60)
+        mqtt_client.loop_start()
 
         # Keep script running
         while True:
