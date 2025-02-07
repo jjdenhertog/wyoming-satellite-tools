@@ -19,27 +19,27 @@ A collection of tools for Wyoming satellites that provides:
 
 ### 1. Start the MQTT Publisher
 
-This service listens for Wyoming events and publishes them as MQTT messages:
+This service listens for Wyoming events and publishes them as MQTT messages. When starting the wyoming-satellite you can add the event-uri using `--event-uri 'tcp://127.0.0.1:10800'`. 
 
 ```bash
 script/run_mqtt \
     --uri 'tcp://127.0.0.1:10800' \
     --name 'living_room' \
-    --mqtt_host '192.168.50.174' \
-    --mqtt_username 'mqtt' \
-    --mqtt_password 'mqtt' \
+    --mqtt_host 'ip-to-your-mqtt-broker' \
+    --mqtt_username 'username (optional)' \
+    --mqtt_password 'password (optional)' \
     --debug
 ```
 
 ### 2. Start the LED Controller
 
-This service listens for MQTT messages and controls the ReSpeaker LEDs:
+This service listens for MQTT messages and controls the ReSpeaker LEDs. The `--name` is used to filter out any events that are not belonging to the satellite. 
 
 ```bash
 script/run_led \
-    --mqtt_host '192.168.50.174' \
-    --mqtt_username 'mqtt' \
-    --mqtt_password 'mqtt' \
+    --mqtt_host 'ip-to-your-mqtt-broker' \
+    --mqtt_username 'username (optional)' \
+    --mqtt_password 'password (optional)' \
     --name 'living_room' \
     --debug
 ```
@@ -106,7 +106,3 @@ The LED ring responds to events as follows:
 - ReSpeaker Mic Array v2.0 (for LED control)
 - MQTT broker
 - Wyoming satellite service
-
-## License
-
-This project is licensed under the MIT License.
