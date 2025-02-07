@@ -11,13 +11,13 @@ from pixel_ring import pixel_ring
 _LOGGER = logging.getLogger()
 
 
-def on_connect(client, userdata, flags, rc):
+def on_connect(client, userdata, flags, reason_code, properties):
     """MQTT on_connect callback."""
-    if rc == 0:
+    if reason_code == 0:
         _LOGGER.info("Connected to MQTT broker")
 
-        client.subscribe("/wyoming-satellite/event")
-        _LOGGER.debug("Subscribed to topic: /wyoming-satellite/event", topic)
+        client.subscribe("wyoming-satellite/event")
+        _LOGGER.debug("Subscribed to topic: wyoming-satellite/event")
     else:
         _LOGGER.error("Failed to connect to MQTT broker with code: %d", rc)
 
@@ -27,28 +27,45 @@ def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
         name = payload.get("name")
+        event = payload.get("event")
         data = payload.get("data")
 
-        if name != userdata["name"]:
+        if name != userdata["satellite_name"]:
             return
 
-        _LOGGER.debug("Received message: %s -> %s", msg.topic, payload)
+        # _LOGGER.debug("Received message: %s -> %s", msg.topic, payload)
 
-        # if msg.topic == MQTT_TOPICS["detection"]:
-        #     pixel_ring.wakeup()
-        # elif msg.topic == MQTT_TOPICS["voice_started"]:
-        #     pixel_ring.speak()
-        # elif msg.topic == MQTT_TOPICS["voice_stopped"]:
-        #     pixel_ring.spin()
-        # elif msg.topic == MQTT_TOPICS["streaming_stopped"]:
-        #     pixel_ring.off()
-        # elif msg.topic == MQTT_TOPICS["connected"]:
-        #     pixel_ring.think()
-        #     asyncio.get_event_loop().create_task(turn_off_after_delay(2))
-        # elif msg.topic == MQTT_TOPICS["disconnected"]:
-        #     pixel_ring.off()
-        # elif msg.topic == MQTT_TOPICS["played"]:
-        #     pixel_ring.off()
+        if event == "connected":
+            pixel_ring.think()
+            asyncio.get_event_loop().create_task(turn_off_after_delay(2))
+        elif event == "disconnected":
+            pixel_ring.off()
+        elif event == "detection":
+            logging.debug("Wake-word detected")
+            # pixel_ring.wakeup()
+            pixel_ring.think()
+        elif event == "voice-started":
+            # Recording stopped
+            logging.debug("Speech detection: started")
+        elif event == "voice-stopped":
+            # Recording stopped
+            logging.debug("Speech detection: stopped")
+        elif event == "streaming-started":
+            # Recording stopped
+            logging.debug("Streaming audio: started")
+        elif event == "streaming-stopped":
+            # Recording stopped
+            logging.debug("Streaming audio: stopped")
+            pixel_ring.off()
+        elif event == "transcript":
+            # STT completed
+            logging.debug("STT completed")
+        elif event == "audio-start":
+            pixel_ring.wakeup()
+        elif event == "audio-stop":
+            pixel_ring.off()
+        elif event == "played":
+            pixel_ring.off()
 
     except json.JSONDecodeError:
         _LOGGER.error("Failed to decode JSON payload")
@@ -95,6 +112,7 @@ async def _main() -> None:
     mqtt_client.username_pw_set(mqtt_username, mqtt_password)
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
+    mqtt_client.user_data_set({"satellite_name": args.name})
 
     try:
         mqtt_client.connect(mqtt_broker, mqtt_port, 60)
@@ -106,8 +124,8 @@ async def _main() -> None:
     except KeyboardInterrupt:
         _LOGGER.info("Shutting down")
     finally:
-        client.loop_stop()
-        client.disconnect()
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
         pixel_ring.off()
 
 

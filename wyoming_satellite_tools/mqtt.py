@@ -30,13 +30,11 @@ _LOGGER = logging.getLogger()
 class MQTTEventHandler(AsyncEventHandler):
     """Event handler for publishing Wyoming events to MQTT."""
 
-    def __init__(
-        self, mqtt_client: mqtt.Client, satellite_id: str, *args, **kwargs
-    ) -> None:
+    def __init__(self, mqtt_client: mqtt.Client, name: str, *args, **kwargs) -> None:
 
         super().__init__(*args, **kwargs)
         self.mqtt_client = mqtt_client
-        self.satellite_id = satellite_id
+        self.name = name
         self.client_id = str(time.monotonic_ns())
 
         _LOGGER.debug("Client connected: %s", self.client_id)
@@ -44,7 +42,7 @@ class MQTTEventHandler(AsyncEventHandler):
     async def handle_event(self, event: Event) -> bool:
         _LOGGER.debug(event)
         payload = json.dumps(
-            {"satelliteId": self.satellite_id, "event": event.type, "data": event.data}
+            {"name": self.name, "event": event.type, "data": event.data}
         )
         self.mqtt_client.publish("wyoming-satellite/event", payload)
 
@@ -80,7 +78,7 @@ async def _main() -> None:
     # Start server
     server = AsyncServer.from_uri(args.uri)
     try:
-        await server.run(partial(MQTTEventHandler, mqtt_client, args.satellite_id))
+        await server.run(partial(MQTTEventHandler, mqtt_client, args.name))
     except KeyboardInterrupt:
         pass
     finally:

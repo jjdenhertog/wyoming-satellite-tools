@@ -13,9 +13,4 @@ setup(
     description="Wyoming Satellite Tools",
     keywords="wyoming,respeaker,led,mqtt",
     python_requires=">=3.7",
-    entry_points={
-        "console_scripts": [
-            "wyoming-satellite-tools-control=wyoming_satellite_tools.usb_led:main",
-        ],
-    },
 )
