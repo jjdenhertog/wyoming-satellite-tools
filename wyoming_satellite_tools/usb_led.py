@@ -44,7 +44,6 @@ def on_message(client, userdata, msg):
             logging.debug("Wake-word detected")
             # pixel_ring.wakeup()
             pixel_ring.think()
-            asyncio.get_event_loop().create_task(turn_off_after_delay(2))
         elif event == "voice-started":
             # Recording stopped
             logging.debug("Speech detection: started")
@@ -60,7 +59,8 @@ def on_message(client, userdata, msg):
             pixel_ring.off()
         elif event == "transcript":
             # STT completed
-            logging.debug("STT completed")
+            logging.debug("STT completed!")
+            pixel_ring.off()
         elif event == "audio-start":
             pixel_ring.off()
         elif event == "audio-stop":
