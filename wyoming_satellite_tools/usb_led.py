@@ -50,21 +50,24 @@ def on_message(client, userdata, msg):
         elif event == "voice-stopped":
             # Recording stopped
             logging.debug("Speech detection: stopped")
+            pixel_ring.off()
         elif event == "streaming-started":
             # Recording stopped
             logging.debug("Streaming audio: started")
         elif event == "streaming-stopped":
             # Recording stopped
             logging.debug("Streaming audio: stopped")
-            pixel_ring.off()
+            # pixel_ring.off()
         elif event == "transcript":
             # STT completed
             logging.debug("STT completed!")
-            pixel_ring.off()
+            # pixel_ring.off()
         elif event == "audio-start":
-            pixel_ring.off()
+            logging.debug("Audio started!")
+            # pixel_ring.off()
         elif event == "audio-stop":
-            pixel_ring.off()
+            logging.debug("Audio Stopped!")
+            # pixel_ring.off()
         elif event == "played":
             pixel_ring.off()
 
